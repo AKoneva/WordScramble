@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var usedWords = [String]()
     @State private var rootWord = ""
     @State private var newWord = ""
+    @State private var score = 0
     
     @State private var errorTitle = ""
     @State private var errorMessage = ""
@@ -18,6 +19,9 @@ struct ContentView: View {
     
     var body: some View {
         List {
+            Section {
+                Text("Your score is \(score)")
+            }
             Section {
                 TextField("Enter your word", text: $newWord)
                     .textInputAutocapitalization(.never)
@@ -36,40 +40,59 @@ struct ContentView: View {
         .onAppear(perform: startGame)
         .navigationTitle(rootWord)
         .alert(errorTitle, isPresented: $showingError) {
-            Button("OK", role: .cancel) { }
+            Button("OK", role: .cancel) {}
         } message: {
             Text(errorMessage)
+        }
+        .toolbar {
+            Button("Restart") {
+                startGame()
+            }
         }
     }
     
     func addNewWord() {
         let answer = newWord.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
 
-        guard answer.count > 0 else { return }
+        guard answer.count >= 3 else {
+            wordError(title: "Word is too short", message: "Be more original. Lost 5 points.")
+            reduceScore()
+            
+            return
+        }
         
         guard isOriginal(word: answer) else {
-            wordError(title: "Word used already", message: "Be more original")
+            wordError(title: "Word used already", message: "Be more original. Lost 5 points.")
+            reduceScore()
+            
             return
         }
 
         guard isPossible(word: answer) else {
-            wordError(title: "Word not possible", message: "You can't spell that word from '\(rootWord)'!")
+            wordError(title: "Word not possible", message: "You can't spell that word from '\(rootWord)'! Lost 5 points.")
+            reduceScore()
+            
             return
         }
 
         guard isReal(word: answer) else {
-            wordError(title: "Word not recognized", message: "You can't just make them up, you know!")
+            wordError(title: "Word not recognized", message: "You can't just make them up, you know! Lost 5 points.")
+            reduceScore()
+            
             return
         }
 
         withAnimation {
             usedWords.insert(answer, at: 0)
+            score += answer.count
         }
         
         newWord = ""
     }
     
     func startGame() {
+        score = 0
+        
         if let startWordsURL = Bundle.main.url(forResource: "start", withExtension: "txt") {
             if let startWords = try? String(contentsOf: startWordsURL) {
                 let allWords = startWords.components(separatedBy: "\n")
@@ -111,6 +134,11 @@ struct ContentView: View {
         errorTitle = title
         errorMessage = message
         showingError = true
+    }
+    
+    func reduceScore() {
+        newWord = ""
+        score -= 5
     }
 }
     
