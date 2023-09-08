@@ -11,7 +11,9 @@ import SwiftUI
 struct Word_ScrambleApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            NavigationView {
+                ContentView()
+            }
         }
     }
 }
